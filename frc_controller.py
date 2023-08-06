@@ -4,6 +4,7 @@ import argparse
 import logging
 import ntcore
 import time
+import signal
 import sys
 
 from enum import Enum, auto
@@ -30,6 +31,9 @@ class FrcController(Joystick):
     def __init__(self, path=None, team_number=9999):
         super().__init__(path)
 
+        signal.signal(signal.SIGINT, self.shutdown)
+        signal.signal(signal.SIGTERM, self.shutdown)
+
         self.inst = ntcore.NetworkTableInstance.getDefault()
         self.inst.startClient4('Test client')
         self.inst.setServerTeam(team_number) 
@@ -50,6 +54,21 @@ class FrcController(Joystick):
         self.turning_noupdates = 0
         self.curr_moving_speed = 0.0
         self.moving_noupdates = 0
+
+    def shutdown( self, *args ):
+        if self.lidar:
+            logger.info( 'Terminating LIDAR Session' )
+            self.set_lidar_state( LidarStates.TERMINATING)
+            self.lidar.cancel()
+
+            logger.info( 'Shutting down LIDAR' )
+            controller.lidar.terminate()
+
+        time.sleep(2)
+        self.set_lidar_state( LidarStates.TERMINATED )
+        logger.info( 'Shutdown complete.' )
+
+        sys.exit(0)
 
     def joystick_control(self):
         for event in self.gamepad.read_loop():
@@ -140,6 +159,8 @@ class FrcController(Joystick):
     #
     def lidar_follow(self, scan_data):
 
+        self.lidar.print_scan_data( scan_data )
+
         self.lidar_align( scan_data, precision_factor=0.3 )
 
         publisher = self.publishers.get('LeftJoystickY', None)
@@ -188,7 +209,7 @@ class FrcController(Joystick):
         self.publishers.get('RightJoystickX', None).set(0.0)
 
 
-    def lidar_control(self, port='/dev/ttyUSB0', capture_distance=48, capture_zone='0-45,315-359', follow_distance=None):
+    def lidar_control(self, port='/dev/ttyUSB0', capture_distance=48, capture_zone='0-45,315-359', follow_distance=0):
         if self.lidar == None:
             self.lidar = Lidar(port)
 
@@ -215,12 +236,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False)
     options = parser.parse_args()
 
-    if options.debug:
-        logger.setLevel(logging.DEBUG)
-
     #
     # Read the config file
     config = read_config( filename='config.json' )
+
+    if options.debug or config.get('debug',False) == True:
+        logger.setLevel(logging.DEBUG)
 
     controller = FrcController(team_number=config.get('team', 9999))
 
@@ -245,14 +266,5 @@ if __name__ == '__main__':
             sys.exit(1)
 
     except KeyboardInterrupt:
-        if controller.lidar:
-            logger.info( 'Terminating LIDAR Session' )
-            controller.set_lidar_state( LidarStates.TERMINATING)
-            controller.lidar.cancel()
+        controller.shutdown();
 
-    if controller.lidar:
-        logger.info( 'Shutting down LIDAR' )
-        controller.lidar.terminate()
-
-    time.sleep(2)
-    controller.set_lidar_state( LidarStates.TERMINATED )

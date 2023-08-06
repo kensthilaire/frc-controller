@@ -1,5 +1,6 @@
 
 import argparse
+import logging
 import threading
 import time
 import traceback
@@ -122,6 +123,9 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--range', action='store', dest='range', default='0-359')
     parser.add_argument('-p', '--port', action='store', dest='port', default='/dev/ttyUSB0')
     options = parser.parse_args()
+
+    if options.debug:
+        logger.setLevel(logging.DEBUG)
 
     #
     # program supports multiple capture ranges for the scan, defined as a comma-separated
