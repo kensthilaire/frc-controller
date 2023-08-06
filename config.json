@@ -1,11 +1,12 @@
 {
     "controller" : "lidar",
     "team"       : 9999,
+    "debug"      : true,
  
     "bling": {
         "enabled"    : true,
-        "leds"       : 16,
-        "segments"   : 1,
+        "leds"       : 30,
+        "segments"   : 2,
         "brightness" : 100
     },
 
