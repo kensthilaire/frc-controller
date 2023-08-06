@@ -15,6 +15,7 @@ import bling_patterns
 
 from config import read_config
 from logger import logger
+from bling_menu import bling_menu
 from joystick import Joystick
 from lidar import Lidar
 
@@ -261,6 +262,8 @@ if __name__ == '__main__':
                                           capture_zone=lidar_config.get('capture_zone', '0-60,300-359'),
                                           capture_distance=lidar_config.get('capture_distance', 30),
                                           follow_distance=lidar_config.get('follow_distance', 48) )
+        elif config['controller'] == 'bling':
+            bling_menu( controller.bling )
         else:
             logger.error( 'ERROR: No Controller Type Specified' )
             sys.exit(1)
