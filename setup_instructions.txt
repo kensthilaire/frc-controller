@@ -1,0 +1,4 @@
+
+
+# to install the network tables on a raspberry pi, run the following the virtual env before attempting to install via requirements.txt
+pip install -U --find-links=https://tortall.net/~robotpy/wheels/2023/raspbian/ pyntcore

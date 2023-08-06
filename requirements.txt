@@ -1,0 +1,7 @@
+BiblioPixel
+BiblioPixelAnimations
+pyntcore
+pynetworktables
+web.py
+evdev
+rplidar-roboticia
