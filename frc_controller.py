@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import ntcore
 import time
-import logging
+import sys
 
 from enum import Enum, auto
 
-from joystick import Joystick
-from lidar import Lidar
+
 from bling import Bling
 import bling_patterns
 
-logging.basicConfig(level=logging.INFO)
+from config import read_config
+from logger import logger
+from joystick import Joystick
+from lidar import Lidar
 
 class LidarStates(Enum):
     INITIAL = auto()
@@ -60,7 +63,7 @@ class FrcController(Joystick):
         curr_state = self.lidar_state
 
         if curr_state != new_state:
-            print( 'State Transition From %s to %s' % (curr_state.name, new_state.name) )
+            logger.debug( 'State Transition From %s to %s' % (curr_state.name, new_state.name) )
             if new_state == LidarStates.ACQUIRING:
                 self.set_bling('Pattern=Scanner,Color=RED,Speed=MEDIUM')
             elif new_state == LidarStates.ACQUIRED:
@@ -120,7 +123,7 @@ class FrcController(Joystick):
             if turning_speed != self.curr_turning_speed:
                 self.curr_turning_speed = turning_speed
                 publisher.set( turning_speed )
-                #print( 'Setting turning speed to %0.1f' % turning_speed )
+                #logger.debug( 'Setting turning speed to %0.1f' % turning_speed )
         else:
             self.turning_noupdates += 1
 
@@ -128,7 +131,7 @@ class FrcController(Joystick):
             if self.curr_turning_speed != 0.0:
                 self.curr_turning_speed = 0.0
                 publisher.set( 0.0 )
-                print( 'No turning updates received recently, halting robot' )
+                logger.debug( 'No turning updates received recently, halting robot' )
 
 
     #
@@ -166,8 +169,8 @@ class FrcController(Joystick):
                 if moving_speed != self.curr_moving_speed:
                     self.curr_moving_speed = moving_speed
                     publisher.set( moving_speed )
-                    #print( 'Setting moving speed to %0.1f' % moving_speed )
-                    print( 'Distance To Target: %d, Angle: %d' % (int(distance),int(angle)) )
+                    #logger.debug( 'Setting moving speed to %0.1f' % moving_speed )
+                    logger.debug( 'Distance To Target: %d, Angle: %d' % (int(distance),int(angle)) )
         else:
             self.moving_noupdates += 1
 
@@ -175,7 +178,7 @@ class FrcController(Joystick):
             if self.curr_moving_speed != 0.0:
                 self.curr_moving_speed = 0.0
                 publisher.set( 0.0 )
-                print( 'No moving updates received recently, halting robot' )
+                logger.debug( 'No moving updates received recently, halting robot' )
 
     #
     # Send commands to halt any movememnt of the robot
@@ -209,38 +212,46 @@ if __name__ == '__main__':
     # parse out the command arguments
     #
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true', dest='debug', default=False)
-    parser.add_argument('-b', '--bling', action='store_true', dest='bling', default=False)
-    parser.add_argument('-j', '--joystick', action='store_true', dest='joystick', default=False)
-    parser.add_argument('-l', '--lidar', action='store_true', dest='lidar', default=False)
-    parser.add_argument('-c', '--capture_distance', action='store', dest='capture_distance', default='42')
-    parser.add_argument('-f', '--follow_distance', action='store', dest='follow_distance', default=0)
-    parser.add_argument('-r', '--range', action='store', dest='range', default='0-60,300-359')
-    parser.add_argument('-p', '--port', action='store', dest='port', default='/dev/ttyUSB0')
+    parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False)
     options = parser.parse_args()
 
-    controller = FrcController(team_number=9999)
+    if options.debug:
+        logger.setLevel(logging.DEBUG)
+
+    #
+    # Read the config file
+    config = read_config( filename='config.json' )
+
+    controller = FrcController(team_number=config.get('team', 9999))
 
     try:
-        if options.bling:
-            controller.bling = Bling( 48, 4, 100 )
+        bling_config = config.get('bling', None)
+        if bling_config != None:
+            controller.bling = Bling( num_leds=bling_config.get('leds',12),
+                                      num_segments=bling_config.get('segments',1),
+                                      brightness=bling_config.get('brightness',100) )
 
-        if options.joystick:
+        if config['controller'] == 'joystick':
             controller.joystick_control()
-        elif options.lidar:
-            controller.lidar_control( port=options.port,
-                                      capture_zone=options.range, 
-                                      capture_distance=int(options.capture_distance),
-                                      follow_distance=int(options.follow_distance) )
+        elif config['controller'] == 'lidar':
+            lidar_config = config.get('lidar',None)
+            if lidar_config:
+                controller.lidar_control( port=lidar_config.get('port', '/dev/ttyUSB0'),
+                                          capture_zone=lidar_config.get('capture_zone', '0-60,300-359'),
+                                          capture_distance=lidar_config.get('capture_distance', 30),
+                                          follow_distance=lidar_config.get('follow_distance', 48) )
+        else:
+            logger.error( 'ERROR: No Controller Type Specified' )
+            sys.exit(1)
 
     except KeyboardInterrupt:
         if controller.lidar:
-            print( 'Terminating LIDAR Session' )
+            logger.info( 'Terminating LIDAR Session' )
             controller.set_lidar_state( LidarStates.TERMINATING)
             controller.lidar.cancel()
 
     if controller.lidar:
-        print( 'Shutting down LIDAR' )
+        logger.info( 'Shutting down LIDAR' )
         controller.lidar.terminate()
 
     time.sleep(2)

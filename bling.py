@@ -1,6 +1,8 @@
 
 from bibliopixel import Strip
 
+from logger import logger
+
 #
 # The current implementation supports the LPD8806 LED strips using the SPI device.
 # Other LED strip types and interfaces may be added over time.
@@ -135,10 +137,10 @@ class Bling(object):
         min_param = int(self.params['Min'])
         max_param = int(self.params['Max'])
         if min_param > 100:
-            print( 'Invalid  Minimum Setting: %d, Must be 0-100' % min_param )
+            logger.info( 'Invalid  Minimum Setting: %d, Must be 0-100' % min_param )
             min_param = 0
         if max_param > 100:
-            print( 'Invalid  Maximum Setting: %d, Must be 0-100' % max_param )
+            logger.info( 'Invalid  Maximum Setting: %d, Must be 0-100' % max_param )
             max_param = 100
         led_range = leds[1]-leds[0]
         min_adjust=0
@@ -163,7 +165,7 @@ class Bling(object):
         
         try:
             # Parse command string into parameter list
-            print( 'Command: %s' % cmd_str )
+            logger.debug( 'Command: %s' % cmd_str )
             cmd_params=cmd_str.split(',')
             for param in cmd_params:
                 name,value=param.split('=')
@@ -188,7 +190,7 @@ class Bling(object):
                 brightness = int(self.params['Brightness'])
                 self.layout.set_brightness(brightness)
             except ValueError:
-                print( 'Invalid Brightness Value: %d' % brightness )
+                logger.info( 'Invalid Brightness Value: %d' % brightness )
             except KeyError:
                 pass
 
@@ -200,7 +202,7 @@ class Bling(object):
         except:
             raise
             # catch any thrown exceptions and generate the error pattern
-            print( 'Error processing command: %s' % cmd_str )
+            logger.error( 'Error processing command: %s' % cmd_str )
             self.pattern = self.bling_patterns.get_pattern('Error')
             self.pattern.setup(self.layout, 'RED')
             self.pattern.run()

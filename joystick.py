@@ -1,5 +1,7 @@
 from evdev import InputDevice, categorize, ecodes, KeyEvent, list_devices
 
+from logger import logger
+
 class Joystick:
     SUPPORTED_DEVICES = (
         "Logitech Gamepad F310"
@@ -43,7 +45,7 @@ class Joystick:
             devices = [InputDevice(path) for path in list_devices()]
             for device in devices:
                 if device.name in self.SUPPORTED_DEVICES:
-                    print( device )
+                    logger.info( device )
                     self.gamepad = InputDevice(device.path)
                     break
 
@@ -75,11 +77,11 @@ class Joystick:
                 pass
             elif decoded_event['type'] == 'BUTTON':
                 processed_state = self.BUTTON_STATES.get(decoded_event['value'], 'UNKNOWN')
-                print( 'Button Type: %s, Value: %s' % (decoded_event['name'], processed_state) )
+                logger.debug( 'Button Type: %s, Value: %s' % (decoded_event['name'], processed_state) )
             elif decoded_event['type'] == 'AXIS':
-                print( 'Axis Type: %s, Value: %f' % (decoded_event['name'], decoded_event['value']) )
+                logger.debug( 'Axis Type: %s, Value: %f' % (decoded_event['name'], decoded_event['value']) )
             else:
-                print( 'Unknown Event Type: %d, Code: %d, Value: %f' % (event.type, event.code, event.value) )
+                logger.info( 'Unknown Event Type: %d, Code: %d, Value: %f' % (event.type, event.code, event.value) )
 
 if __name__ == '__main__':
 
@@ -88,4 +90,4 @@ if __name__ == '__main__':
     try:
         joystick.read()
     except KeyboardInterrupt:
-        print( 'Terminating Joystick Session' )
+        logger.info( 'Terminating Joystick Session' )

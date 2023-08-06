@@ -3,6 +3,9 @@ Created on Feb 5, 2017
 
 @author: ksthilaire
 '''
+
+from logger import logger
+
 #
 # import all the animations that are provided by the BiblioPixel animation library
 #
@@ -266,7 +269,7 @@ class BlingPatternBase(object):
         self.fps = self.speed_params[speed_str.upper()]
         return self.fps
     def setup(self):
-        print( 'Setup Not Implemented!!!' )
+        logger.error( 'Setup Not Implemented!!!' )
         raise
     def clear(self):
         self.animation = None
@@ -274,7 +277,7 @@ class BlingPatternBase(object):
     def run(self):
         if self.animated is True:
             if self.animation is None:
-                print( 'Animation is NOT Setup' )
+                logger.error( 'Animation is NOT Setup' )
                 raise
             
             #run the animation
@@ -292,7 +295,7 @@ class BlingPatternBase(object):
 
     def get_animation(self):
         if self.animation is None:
-            print( 'Pattern is NOT set up!!!' )
+            logger.error( 'Pattern is NOT set up!!!' )
             raise
         return self.animation
 

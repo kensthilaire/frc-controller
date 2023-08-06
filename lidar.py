@@ -6,6 +6,8 @@ import traceback
 
 from rplidar import RPLidar
 
+from logger import logger
+
 #
 # Lidar is a class derived from the base RP Lidar class which contains all the
 # the underlying driver code that provides the interface to the Slamtec RP Lidar
@@ -48,7 +50,7 @@ class Lidar(RPLidar):
     def range_scan(self, ranges=((0,359)), min_distance=42):
         self.debug = True
         if self.debug:
-            print( 'Capture Ranges: %s' % str(ranges) )
+            logger.debug( 'Capture Ranges: %s' % str(ranges) )
 
         for i, scan in enumerate(self.iter_scans()):
 
@@ -66,7 +68,7 @@ class Lidar(RPLidar):
                     try:
                         scan_map[(int(measurement[1])-360)] = distance
                     except IndexError:
-                        print( 'Error indexing into scan map - %d' % int(measurement[1]) )
+                        logger.info( 'Error indexing into scan map - %d' % int(measurement[1]) )
 
             for range in ranges:
                 curr_closest = min(scan_map[range[0]:range[1]])
@@ -106,7 +108,7 @@ class Lidar(RPLidar):
 
     def print_scan_data(self,scan_data):
         if scan_data.get('valid', False)==True:
-            print( 'Closest scan measurement in capture zone is: %0.1f at angle: %d' % (scan_data['distance'], scan_data['angle']) )
+            logger.debug( 'Closest scan measurement in capture zone is: %0.1f at angle: %d' % (scan_data['distance'], scan_data['angle']) )
     
 
 if __name__ == '__main__':
@@ -138,8 +140,8 @@ if __name__ == '__main__':
     #
     # dump out the info block for the lidar and display the health of the device
     #
-    print(lidar.get_info())
-    print(lidar.get_health())
+    logger.debug(lidar.get_info())
+    logger.debug(lidar.get_health())
 
     #
     # perform the requested scan operation
@@ -151,16 +153,16 @@ if __name__ == '__main__':
                                sample_interval=0.05, callback=lidar.print_scan_data)
 
     except KeyboardInterrupt:
-        print( 'Canceling LIDAR scan' )
+        logger.debug( 'Canceling LIDAR scan' )
         lidar.cancel()
     except:
-        print( 'Unexpected Exception Encountered During Scan Operation' )
+        logger.info( 'Unexpected Exception Encountered During Scan Operation' )
         traceback.print_exc()
 
     #
     # we need to cleanly shut down the LIDAR device before exiting
     #
-    print( 'Shutting down LIDAR' )
+    logger.info( 'Shutting down LIDAR' )
     lidar.terminate()
 
-    print( 'Done' )
+    logger.info( 'Done' )

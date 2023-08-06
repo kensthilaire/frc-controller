@@ -1,0 +1,11 @@
+Unit]
+Description=FRC Robot Controller Application
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/GitHub/frc-controller
+ExecStart=/home/pi/Envs/frc-controller/bin/python /home/pi/GitHub/frc-controller/frc_controller.py -b -j
+
+[Install]
+WantedBy=multi-user.target
+
