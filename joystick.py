@@ -1,5 +1,7 @@
+
 from evdev import InputDevice, categorize, ecodes, KeyEvent, list_devices
 
+import logging
 from logger import logger
 
 class Joystick:
@@ -66,6 +68,7 @@ class Joystick:
             if axis:
                 decoded_event['name'] = axis['name']
                 decoded_event['value'] = event.value / axis['max']
+                decoded_event['rounded_value'] = round((event.value / axis['max']), 2)
 
         return decoded_event
 
@@ -84,9 +87,9 @@ class Joystick:
                 logger.info( 'Unknown Event Type: %d, Code: %d, Value: %f' % (event.type, event.code, event.value) )
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
 
     joystick = Joystick()
-
     try:
         joystick.read()
     except KeyboardInterrupt:
